@@ -1,0 +1,19 @@
+repos:
+- repo: 'https://github.com/jazzband/pip-tools'
+  rev: 6.13.0
+  hooks:
+  - id: pip-compile
+    language_version: python3.10
+    args:
+    - '--no-emit-index-url'
+    - '--output-file=compiled_requirements.txt'
+    - requirements.txt
+    files: ^requirements.txt$
+-   repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+    -   id: black
+-   repo: https://github.com/pycqa/isort
+    rev: 5.5.2
+    hooks:
+    -   id: isort
