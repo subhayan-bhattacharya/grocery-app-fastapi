@@ -1,1 +1,4 @@
 *.db
+*ipynb*
+*__pycache__*
+.idea

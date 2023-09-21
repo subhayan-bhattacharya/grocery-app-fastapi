@@ -2,10 +2,11 @@
 import pydantic
 
 
-class GroceryEntries(pydantic.BaseModel):
+class Entries(pydantic.BaseModel):
     """Base model for pydantic entries."""
+
     item_name: str
     category_name: str
     quantity: int
-    description: str
+    description: str | None
     purchased: bool
