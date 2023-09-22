@@ -51,7 +51,7 @@ class Backend:
 def instantiate_backend(sqlite_db_path: str):
     """Instantiates the backend."""
     global BACKEND
-    engine = create_engine(sqlite_db_path, echo=True)
+    engine = create_engine(sqlite_db_path)
     session_maker = sessionmaker(engine)
     print("Instantiating backend....!")
     BACKEND = Backend(session_maker=session_maker)
