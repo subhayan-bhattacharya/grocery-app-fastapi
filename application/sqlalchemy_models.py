@@ -24,13 +24,34 @@ class User(Base):
     password = Column(String(30), nullable=False)
 
 
-class Supermarket(Base):
+class GrocerySupermarket(Base):
     """Store class for ORM."""
 
-    __tablename__ = "supermarket"
+    __tablename__ = "grocery_supermarket"
 
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(20), nullable=False, unique=True)
+
+
+class GroceryBucket(Base):
+    """Store class for grocery bucket."""
+
+    __tablename__ = "grocery_bucket"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    name = Column(String(20), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class GroceryBucketAccess(Base):
+    """Class for grocery access bucket."""
+
+    __tablename__ = "grocery_bucket_access"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    bucket_id = Column(Integer, ForeignKey("grocery_bucket.id"))
 
 
 class GroceryItem(Base):
@@ -59,25 +80,14 @@ class GroceryEntries(Base):
     __tablename__ = "grocery_entries"
 
     id = Column(Integer, primary_key=True, nullable=False)
+    bucket_id = Column(Integer, ForeignKey("grocery_bucket.id"))
     # There will be an entry into the item table with the category when
     # this table gets populated
     item_id = Column(Integer, ForeignKey("grocery_item.id"))
     category_id = Column(Integer, ForeignKey("grocery_category.id"))
     quantity = Column(Integer, default=1, nullable=False)
     description = Column(String(50))
-    purchased = Column(Boolean)
-
-
-class GroceryPurchaseHistory(Base):
-    """Class for grocery purchase history ORM."""
-
-    __tablename__ = "grocery_purchase_history"
-
-    id = Column(Integer, primary_key=True, nullable=False)
-    grocery_entry_id = Column(Integer, ForeignKey("grocery_entries.id"))
-    date_purchased = Column(DateTime, default=datetime.datetime.utcnow)
-    supermarket_id = Column(Integer, ForeignKey("supermarket.id"))
-    user_id = Column(Integer, ForeignKey("user.id"))
+    purchased = Column(Boolean, default=False)
 
 
 if __name__ == "__main__":

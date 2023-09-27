@@ -4,9 +4,13 @@ from typing import Union
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 
-from application.models import Entries
-from application.sqlalchemy_models import (GroceryCategory, GroceryEntries,
-                                           GroceryItem)
+from application.models import Entries, SuperMarket
+from application.sqlalchemy_models import (
+    GroceryCategory,
+    GroceryEntries,
+    GroceryItem,
+    GrocerySupermarket,
+)
 
 BACKEND: Union["Backend", None] = None
 
@@ -46,6 +50,27 @@ class Backend:
                     )
                 )
         return entries
+
+    def add_a_supermarket(self, supermarket: SuperMarket) -> SuperMarket:
+        """Add a supermarket into the database."""
+        with self.session_maker.begin() as session:
+            new_supermarket = GrocerySupermarket(**supermarket.model_dump())
+            session.add(new_supermarket)
+        with self.session_maker.begin() as new_session:
+            db_entry = (
+                new_session.query(GrocerySupermarket)
+                .filter_by(name=supermarket.name)
+                .first()
+            )
+            return SuperMarket.model_validate({"name": db_entry.name})
+
+    def get_the_list_of_supermarkets(self) -> list[SuperMarket]:
+        """Get the list of supermarkets from database."""
+        supermarkets = []
+        with self.session_maker.begin() as session:
+            for db_entry in session.query(GrocerySupermarket).all():
+                supermarkets.append(SuperMarket.model_validate({"name": db_entry.name}))
+        return supermarkets
 
 
 def instantiate_backend(sqlite_db_path: str):

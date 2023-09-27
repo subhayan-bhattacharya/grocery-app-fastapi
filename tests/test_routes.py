@@ -11,7 +11,7 @@ from application import app
 from application.backend import instantiate_backend
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def database(request):
     # Define the database file path
     db_file_path = os.path.join(request.config.rootdir, "test_database.db")
@@ -54,7 +54,7 @@ def test_get_not_purchased_entries(database):
             user_last_name="lastname1",
             password="password1",
         ),
-        text("INSERT INTO supermarket (name) " "VALUES (:name)").params(name="Edeka"),
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Edeka"),
         text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
             item_name="Bananas"
         ),
@@ -111,3 +111,33 @@ def test_get_not_purchased_entries(database):
     assert isinstance(response.json(), list)
     for entry in response.json():
         assert entry["item_name"] in ["Rice", "Milk"]
+
+
+def test_adding_a_supermarket(database):
+    """Test that a supermarket can be added to the database."""
+    _, database_file_path_str = database
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post("/supermarkets", json={"name": "Edeka"})
+    assert response.status_code == 201
+    from application.backend import BACKEND
+    assert BACKEND.get_the_list_of_supermarkets()[0].name == "Edeka"
+
+
+def test_querying_list_of_supermarkets(database):
+    """Test querying list of supermarkets."""
+    sql_statements = [
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Edeka"),
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Aldi"),
+    ]
+    add_and_execute_statements, database_file_path_str = database
+    add_and_execute_statements(sql_statements)
+
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.get("/supermarkets")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+    assert len(response.json()) == 2
+    supermarket_entries = [entry['name'] for entry in response.json()]
+    assert sorted(supermarket_entries) == sorted(["Aldi", "Edeka"])

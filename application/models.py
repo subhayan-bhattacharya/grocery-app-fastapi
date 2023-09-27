@@ -10,3 +10,9 @@ class Entries(pydantic.BaseModel):
     quantity: int
     description: str | None
     purchased: bool
+
+
+class SuperMarket(pydantic.BaseModel):
+    """Base model for a supermarket."""
+
+    name: str
