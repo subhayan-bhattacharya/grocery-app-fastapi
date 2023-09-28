@@ -16,3 +16,10 @@ class SuperMarket(pydantic.BaseModel):
     """Base model for a supermarket."""
 
     name: str
+
+
+class Category(pydantic.BaseModel):
+    """Base model for category."""
+
+    name: str
+    description: str

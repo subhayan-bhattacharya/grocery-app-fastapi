@@ -70,8 +70,8 @@ class GroceryCategory(Base):
     __tablename__ = "grocery_category"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    category_name = Column(String(20), index=True, nullable=False, unique=True)
-    category_description = Column(String(50))
+    name = Column(String(20), index=True, nullable=False, unique=True)
+    description = Column(String(50))
 
 
 class GroceryEntries(Base):

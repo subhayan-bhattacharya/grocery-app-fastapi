@@ -54,7 +54,9 @@ def test_get_not_purchased_entries(database):
             user_last_name="lastname1",
             password="password1",
         ),
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Edeka"),
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
+            name="Edeka"
+        ),
         text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
             item_name="Bananas"
         ),
@@ -65,25 +67,25 @@ def test_get_not_purchased_entries(database):
             item_name="Milk"
         ),
         text(
-            "INSERT INTO grocery_category (category_name, category_description) "
-            "VALUES (:category_name, :category_description)"
+            "INSERT INTO grocery_category (name, description) "
+            "VALUES (:name, :description)"
         ).params(
-            category_name="Fruits",
-            category_description="Fruits",
+            name="Fruits",
+            description="Fruits",
         ),
         text(
-            "INSERT INTO grocery_category (category_name, category_description) "
-            "VALUES (:category_name, :category_description)"
+            "INSERT INTO grocery_category (name, description) "
+            "VALUES (:name, :description)"
         ).params(
-            category_name="Grains, Pasta and Rice",
-            category_description="Grains, Pasta and Rice",
+            name="Grains, Pasta and Rice",
+            description="Grains, Pasta and Rice",
         ),
         text(
-            "INSERT INTO grocery_category (category_name, category_description) "
-            "VALUES (:category_name, :category_description)"
+            "INSERT INTO grocery_category (name, description) "
+            "VALUES (:name, :description)"
         ).params(
-            category_name="Dairy",
-            category_description="Dairy Products",
+            name="Dairy",
+            description="Dairy Products",
         ),
         text(
             "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
@@ -121,14 +123,19 @@ def test_adding_a_supermarket(database):
     response = client.post("/supermarkets", json={"name": "Edeka"})
     assert response.status_code == 201
     from application.backend import BACKEND
+
     assert BACKEND.get_the_list_of_supermarkets()[0].name == "Edeka"
 
 
 def test_querying_list_of_supermarkets(database):
     """Test querying list of supermarkets."""
     sql_statements = [
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Edeka"),
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(name="Aldi"),
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
+            name="Edeka"
+        ),
+        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
+            name="Aldi"
+        ),
     ]
     add_and_execute_statements, database_file_path_str = database
     add_and_execute_statements(sql_statements)
@@ -139,5 +146,16 @@ def test_querying_list_of_supermarkets(database):
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert len(response.json()) == 2
-    supermarket_entries = [entry['name'] for entry in response.json()]
+    supermarket_entries = [entry["name"] for entry in response.json()]
     assert sorted(supermarket_entries) == sorted(["Aldi", "Edeka"])
+
+
+def test_adding_a_category(database):
+    """Test that a category can be added to the database."""
+    _, database_file_path_str = database
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post(
+        "/categories", json={"name": "Test_category", "description": "Test category"}
+    )
+    assert response.status_code == 201

@@ -4,7 +4,7 @@ from typing import Union
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 
-from application.models import Entries, SuperMarket
+from application.models import Category, Entries, SuperMarket
 from application.sqlalchemy_models import (
     GroceryCategory,
     GroceryEntries,
@@ -29,7 +29,7 @@ class Backend:
                 session.query(
                     GroceryEntries.id,
                     GroceryItem.item_name,
-                    GroceryCategory.category_name,
+                    GroceryCategory.name,
                     GroceryEntries.quantity,
                     GroceryEntries.description,
                     GroceryEntries.purchased,
@@ -71,6 +71,35 @@ class Backend:
             for db_entry in session.query(GrocerySupermarket).all():
                 supermarkets.append(SuperMarket.model_validate({"name": db_entry.name}))
         return supermarkets
+
+    def add_a_new_category(self, category: Category) -> Category:
+        """Add a new category."""
+        with self.session_maker.begin() as session:
+            new_category = GroceryCategory(**category.model_dump())
+            session.add(new_category)
+
+        with self.session_maker.begin() as new_session:
+            db_entry = (
+                new_session.query(GroceryCategory).filter_by(name=category.name).first()
+            )
+            return Category.model_validate(
+                {
+                    "name": db_entry.name,
+                    "description": db_entry.description,
+                }
+            )
+
+    def get_all_the_categories(self) -> list[Category]:
+        """Get the list of categories."""
+        categories = []
+        with self.session_maker.begin() as session:
+            for db_entry in session.query(GroceryCategory).all():
+                categories.append(
+                    Category.model_validate(
+                        {"name": db_entry.name, "description": db_entry.description}
+                    )
+                )
+        return categories
 
 
 def instantiate_backend(sqlite_db_path: str):
