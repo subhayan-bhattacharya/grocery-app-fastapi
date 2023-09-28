@@ -1,7 +1,7 @@
 """Module for code which interacts with the database."""
 from typing import Union
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc
 from sqlalchemy.orm.session import sessionmaker
 
 from application.models import Category, Entries, SuperMarket
@@ -13,6 +13,10 @@ from application.sqlalchemy_models import (
 )
 
 BACKEND: Union["Backend", None] = None
+
+
+class BackendException(Exception):
+    pass
 
 
 class Backend:
@@ -54,8 +58,15 @@ class Backend:
     def add_a_supermarket(self, supermarket: SuperMarket) -> SuperMarket:
         """Add a supermarket into the database."""
         with self.session_maker.begin() as session:
-            new_supermarket = GrocerySupermarket(**supermarket.model_dump())
-            session.add(new_supermarket)
+            try:
+                new_supermarket = GrocerySupermarket(**supermarket.model_dump())
+                session.add(new_supermarket)
+                session.flush()  # unless we do this the exception is not caught !
+            except exc.IntegrityError as error:
+                session.rollback()
+                raise BackendException(
+                    f"There is already a supermarket with the name : {supermarket.name}"
+                )
         with self.session_maker.begin() as new_session:
             db_entry = (
                 new_session.query(GrocerySupermarket)
@@ -75,8 +86,15 @@ class Backend:
     def add_a_new_category(self, category: Category) -> Category:
         """Add a new category."""
         with self.session_maker.begin() as session:
-            new_category = GroceryCategory(**category.model_dump())
-            session.add(new_category)
+            try:
+                new_category = GroceryCategory(**category.model_dump())
+                session.add(new_category)
+                session.flush()  # unless we do this the exception is not caught !
+            except exc.IntegrityError as error:
+                session.rollback()
+                raise BackendException(
+                    f"There is already a category with the name : {category.name}"
+                )
 
         with self.session_maker.begin() as new_session:
             db_entry = (

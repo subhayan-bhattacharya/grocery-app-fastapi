@@ -1,5 +1,5 @@
 """Module for containing the routes of the application."""
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 import application.backend as backend
 from application.models import Category, Entries, SuperMarket
@@ -16,7 +16,10 @@ def get_grocery_entries() -> list[Entries]:
 @router.post("/supermarkets", response_model=SuperMarket, status_code=201)
 def create_a_supermarket_entry(supermarket: SuperMarket) -> SuperMarket:
     """Create an entry into the supermarket table."""
-    return backend.BACKEND.add_a_supermarket(supermarket=supermarket)
+    try:
+        return backend.BACKEND.add_a_supermarket(supermarket=supermarket)
+    except backend.BackendException as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.get(path="/supermarkets", response_model=list[SuperMarket])
@@ -28,7 +31,10 @@ def get_supermarket_entries() -> list[SuperMarket]:
 @router.post(path="/categories", response_model=Category, status_code=201)
 def create_a_new_category(category: Category) -> Category:
     """Create a new category."""
-    return backend.BACKEND.add_a_new_category(category=category)
+    try:
+        return backend.BACKEND.add_a_new_category(category=category)
+    except backend.BackendException as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.get(path="/categories", response_model=list[Category])
