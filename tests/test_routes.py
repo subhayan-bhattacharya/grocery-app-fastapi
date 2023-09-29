@@ -1,44 +1,24 @@
 """Test file for routes."""
-import os
+import sqlite3
 
-import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
-import application.sqlalchemy_models as sqlalchemy_models
 from application import app
 from application.backend import instantiate_backend
 
 
-@pytest.fixture()
-def database(request):
-    # Define the database file path
-    db_file_path = os.path.join(request.config.rootdir, "test_database.db")
-
-    # Create a SQLite database engine
-    database_file_path_str = f"sqlite:///{db_file_path}"
-    engine = create_engine(database_file_path_str)
-
-    # Create the tables based on your SQLAlchemy models
-    sqlalchemy_models.Base.metadata.create_all(engine)
-
-    # Create a session to interact with the database
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    def remove_database_file():
-        session.close()
-        os.remove(db_file_path)
-
-    request.addfinalizer(remove_database_file)
-
-    def add_and_execute_sql_statements(statements):
-        for statement in statements:
-            session.execute(statement)
-        session.commit()
-
-    yield add_and_execute_sql_statements, database_file_path_str
+def execute_sql_and_get_results(
+    database_file_path: str, statement: str, params: tuple[str]
+) -> tuple[str]:
+    """Execute the sql and get back the results."""
+    conn = sqlite3.connect(database_file_path)
+    cursor = conn.cursor()
+    cursor.execute(statement, params)
+    results = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return results
 
 
 def test_get_not_purchased_entries(database):
@@ -46,12 +26,12 @@ def test_get_not_purchased_entries(database):
     # sql statements to set up the database before the test
     sql_statements = [
         text(
-            "INSERT INTO user (user_email, user_name, user_last_name, password) "
-            "VALUES (:user_email, :user_name, :user_last_name, :password)"
+            "INSERT INTO user (email, name, lastName, password) "
+            "VALUES (:email, :name, :lastName, :password)"
         ).params(
-            user_email="user1@example.com",
-            user_name="user1",
-            user_last_name="lastname1",
+            email="user1@example.com",
+            name="user1",
+            lastName="lastname1",
             password="password1",
         ),
         text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
@@ -122,9 +102,13 @@ def test_adding_a_supermarket(database):
     client = TestClient(app)
     response = client.post("/supermarkets", json={"name": "Edeka"})
     assert response.status_code == 201
-    from application.backend import BACKEND
-
-    assert BACKEND.get_the_list_of_supermarkets()[0].name == "Edeka"
+    results = execute_sql_and_get_results(
+        database_file_path=database_file_path_str.split("/")[-1],
+        statement="select * from grocery_supermarket where name = ?",
+        params=("Edeka",),
+    )
+    assert len(results) == 1
+    assert results[0][1] == "Edeka"
 
 
 def test_adding_a_supermarket_twice_fails(database):
@@ -179,6 +163,13 @@ def test_adding_a_category(database):
         "/categories", json={"name": "Test_category", "description": "Test category"}
     )
     assert response.status_code == 201
+    results = execute_sql_and_get_results(
+        database_file_path=database_file_path_str.split("/")[-1],
+        statement="select * from grocery_category where name = ?",
+        params=("Test_category",),
+    )
+    assert len(results) == 1
+    assert results[0][1] == "Test_category"
 
 
 def test_adding_a_category_twice_fails(database):
@@ -235,3 +226,60 @@ def test_querying_list_of_categories(database):
     assert len(response.json()) == 2
     supermarket_entries = [entry["name"] for entry in response.json()]
     assert sorted(supermarket_entries) == sorted(["Spices", "Fruits"])
+
+
+def test_adding_a_user_to_the_database(database):
+    """Test that a user could be added to the database."""
+    _, database_file_path_str = database
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post(
+        "/users",
+        json={
+            "name": "Subhayan",
+            "email": "test_user@gmail.com",
+            "lastName": "Bhattacharya",
+            "password": "password",
+        },
+    )
+    assert response.status_code == 201
+    results = execute_sql_and_get_results(
+        database_file_path=database_file_path_str.split("/")[-1],
+        statement="select * from user where email = ?",
+        params=("test_user@gmail.com",),
+    )
+    assert len(results) == 1
+    assert results[0][1] == "test_user@gmail.com"
+
+
+def test_adding_a_user_twice_fails(database):
+    """Test that the same user cannot be added twice."""
+    sql_statements = [
+        text(
+            "INSERT INTO user (email, name, lastName, password) "
+            "VALUES (:email, :name, :lastName, :password)"
+        ).params(
+            email="user1@example.com",
+            name="user1",
+            lastName="lastname1",
+            password="password",
+        )
+    ]
+    add_and_execute_statements, database_file_path_str = database
+    add_and_execute_statements(sql_statements)
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post(
+        "/users",
+        json={
+            "name": "user1",
+            "email": "user1@example.com",
+            "lastName": "lastname1",
+            "password": "password",
+        },
+    )
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "There is already a user with the name : user1 and email : user1@example.com"
+    )

@@ -8,6 +8,7 @@ from sqlalchemy import Column, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Boolean, DateTime, Integer
+from werkzeug.security import check_password_hash, generate_password_hash
 
 Base = declarative_base()
 
@@ -18,10 +19,21 @@ class User(Base):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    user_email = Column(String(30), index=True, nullable=False, unique=True)
-    user_name = Column(String(30), nullable=False, unique=False)
-    user_last_name = Column(String(30), nullable=False, unique=False)
-    password = Column(String(30), nullable=False)
+    email = Column(String(30), index=True, nullable=False, unique=True)
+    name = Column(String(30), nullable=False, unique=False)
+    lastName = Column(String(30), nullable=False, unique=False)
+    _password = Column("password", String(256), nullable=False)
+
+    @property
+    def password(self):
+        raise AttributeError("password is not a readable attribute")
+
+    @password.setter
+    def password(self, password):
+        self._password = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self._password, password)
 
 
 class GrocerySupermarket(Base):

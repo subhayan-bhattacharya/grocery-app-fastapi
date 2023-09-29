@@ -4,18 +4,19 @@ from typing import Union
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm.session import sessionmaker
 
-from application.models import Category, Entries, SuperMarket
-from application.sqlalchemy_models import (
-    GroceryCategory,
-    GroceryEntries,
-    GroceryItem,
-    GrocerySupermarket,
-)
+from application.models import Category, Entries, SuperMarket, UserModel
+from application.sqlalchemy_models import (GroceryCategory, GroceryEntries,
+                                           GroceryItem, GrocerySupermarket,
+                                           User)
 
 BACKEND: Union["Backend", None] = None
 
 
 class BackendException(Exception):
+    pass
+
+
+class IncorrectCredentials(Exception):
     pass
 
 
@@ -118,6 +119,55 @@ class Backend:
                     )
                 )
         return categories
+
+    def add_a_new_user(self, user: UserModel):
+        """Add a new user to the database."""
+        with self.session_maker.begin() as session:
+            try:
+                user.password = user.password.get_secret_value()
+                new_user = User(**user.model_dump())
+                session.add(new_user)
+                session.flush()  # unless we do this the exception is not caught !
+            except exc.IntegrityError as error:
+                session.rollback()
+                raise BackendException(
+                    f"There is already a user with the name : "
+                    f"{new_user.name} and email : {new_user.email}"
+                )
+        with self.session_maker.begin() as new_session:
+            db_entry = new_session.query(User).filter_by(email=user.email).first()
+            return UserModel.model_validate(
+                {
+                    "name": db_entry.name,
+                    "lastName": db_entry.lastName,
+                    "email": db_entry.email,
+                    # this is fine since pydantic with serialize it well when displaying
+                    "password": db_entry._password,
+                }
+            )
+
+    def get_a_user(self, email: str) -> UserModel:
+        """Get a user from the database using the email."""
+        with self.session_maker.begin() as new_session:
+            user_in_db = new_session.query(User).filter_by(email=email).first()
+            if user_in_db is not None:
+                return UserModel.model_validate(
+                    {
+                        "name": user_in_db.name,
+                        "lastName": user_in_db.lastName,
+                        "email": user_in_db.email,
+                        # this is fine since pydantic with serialize it well when displaying
+                        "password": user_in_db._password,
+                    }
+                )
+            raise IncorrectCredentials("Wrong user name or password!.")
+
+    def check_password_of_user(self, user: UserModel, password: str) -> None:
+        """Check the password of the user is correct."""
+        with self.session_maker.begin() as session:
+            user_in_db = session.query(User).filter_by(email=user.email).first()
+            if not user_in_db.verify_password(password=password):
+                raise IncorrectCredentials("Wrong user name or password!.")
 
 
 def instantiate_backend(sqlite_db_path: str):

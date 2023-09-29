@@ -2,3 +2,7 @@ fastapi
 sqlalchemy
 uvicorn
 python-dotenv
+email-validator
+werkzeug
+python-multipart
+python-jose[cryptography]
