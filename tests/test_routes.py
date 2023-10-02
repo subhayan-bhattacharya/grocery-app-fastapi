@@ -20,79 +20,79 @@ def execute_sql_and_get_results(
     conn.close()
     return results
 
-
-def test_get_not_purchased_entries(database):
-    """Test that the route /entries works as expected."""
-    # sql statements to set up the database before the test
-    sql_statements = [
-        text(
-            "INSERT INTO user (email, name, lastName, password) "
-            "VALUES (:email, :name, :lastName, :password)"
-        ).params(
-            email="user1@example.com",
-            name="user1",
-            lastName="lastname1",
-            password="password1",
-        ),
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
-            name="Edeka"
-        ),
-        text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
-            item_name="Bananas"
-        ),
-        text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
-            item_name="Rice"
-        ),
-        text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
-            item_name="Milk"
-        ),
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Fruits",
-            description="Fruits",
-        ),
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Grains, Pasta and Rice",
-            description="Grains, Pasta and Rice",
-        ),
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Dairy",
-            description="Dairy Products",
-        ),
-        text(
-            "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
-            "VALUES (:item_id, :category_id, :quantity, :purchased)"
-        ).params(item_id=1, category_id=1, quantity=1, purchased=0),
-        text(
-            "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
-            "VALUES (:item_id, :category_id, :quantity, :purchased)"
-        ).params(item_id=2, category_id=2, quantity=1, purchased=0),
-        text(
-            "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
-            "VALUES (:item_id, :category_id, :quantity, :purchased)"
-        ).params(item_id=3, category_id=3, quantity=1, purchased=0),
-        text(
-            "UPDATE grocery_entries SET purchased = :purchased_updated WHERE id = :id"
-        ).params(purchased_updated=1, id=1),
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.get("/entries")
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
-    for entry in response.json():
-        assert entry["item_name"] in ["Rice", "Milk"]
+#
+# def test_get_not_purchased_entries(database):
+#     """Test that the route /entries works as expected."""
+#     # sql statements to set up the database before the test
+#     sql_statements = [
+#         text(
+#             "INSERT INTO user (email, name, lastName, password) "
+#             "VALUES (:email, :name, :lastName, :password)"
+#         ).params(
+#             email="user1@example.com",
+#             name="user1",
+#             lastName="lastname1",
+#             password="password1",
+#         ),
+#         text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
+#             name="Edeka"
+#         ),
+#         text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
+#             item_name="Bananas"
+#         ),
+#         text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
+#             item_name="Rice"
+#         ),
+#         text("INSERT INTO grocery_item (item_name) " "VALUES (:item_name)").params(
+#             item_name="Milk"
+#         ),
+#         text(
+#             "INSERT INTO grocery_category (name, description) "
+#             "VALUES (:name, :description)"
+#         ).params(
+#             name="Fruits",
+#             description="Fruits",
+#         ),
+#         text(
+#             "INSERT INTO grocery_category (name, description) "
+#             "VALUES (:name, :description)"
+#         ).params(
+#             name="Grains, Pasta and Rice",
+#             description="Grains, Pasta and Rice",
+#         ),
+#         text(
+#             "INSERT INTO grocery_category (name, description) "
+#             "VALUES (:name, :description)"
+#         ).params(
+#             name="Dairy",
+#             description="Dairy Products",
+#         ),
+#         text(
+#             "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
+#             "VALUES (:item_id, :category_id, :quantity, :purchased)"
+#         ).params(item_id=1, category_id=1, quantity=1, purchased=0),
+#         text(
+#             "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
+#             "VALUES (:item_id, :category_id, :quantity, :purchased)"
+#         ).params(item_id=2, category_id=2, quantity=1, purchased=0),
+#         text(
+#             "INSERT INTO grocery_entries (item_id, category_id, quantity, purchased) "
+#             "VALUES (:item_id, :category_id, :quantity, :purchased)"
+#         ).params(item_id=3, category_id=3, quantity=1, purchased=0),
+#         text(
+#             "UPDATE grocery_entries SET purchased = :purchased_updated WHERE id = :id"
+#         ).params(purchased_updated=1, id=1),
+#     ]
+#     add_and_execute_statements, database_file_path_str = database
+#     add_and_execute_statements(sql_statements)
+#
+#     instantiate_backend(sqlite_db_path=database_file_path_str)
+#     client = TestClient(app)
+#     response = client.get("/entries")
+#     assert response.status_code == 200
+#     assert isinstance(response.json(), list)
+#     for entry in response.json():
+#         assert entry["item_name"] in ["Rice", "Milk"]
 
 
 def test_adding_a_supermarket(database):

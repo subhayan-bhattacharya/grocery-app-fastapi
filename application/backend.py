@@ -4,10 +4,11 @@ from typing import Union
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm.session import sessionmaker
 
-from application.models import Category, Entries, SuperMarket, UserModel
-from application.sqlalchemy_models import (GroceryCategory, GroceryEntries,
-                                           GroceryItem, GrocerySupermarket,
-                                           User)
+from application.models import (Bucket, Category, Entries, SuperMarket,
+                                UserModel, UserModelWithId)
+from application.sqlalchemy_models import (GroceryBucket, GroceryCategory,
+                                           GroceryEntries, GroceryItem,
+                                           GrocerySupermarket, User)
 
 BACKEND: Union["Backend", None] = None
 
@@ -146,13 +147,14 @@ class Backend:
                 }
             )
 
-    def get_a_user(self, email: str) -> UserModel:
+    def get_a_user(self, email: str) -> UserModelWithId:
         """Get a user from the database using the email."""
         with self.session_maker.begin() as new_session:
             user_in_db = new_session.query(User).filter_by(email=email).first()
             if user_in_db is not None:
-                return UserModel.model_validate(
+                return UserModelWithId.model_validate(
                     {
+                        "id": user_in_db.id,
                         "name": user_in_db.name,
                         "lastName": user_in_db.lastName,
                         "email": user_in_db.email,
@@ -168,6 +170,41 @@ class Backend:
             user_in_db = session.query(User).filter_by(email=user.email).first()
             if not user_in_db.verify_password(password=password):
                 raise IncorrectCredentials("Wrong user name or password!.")
+
+    def create_a_grocery_bucket(self, bucket: Bucket, user: UserModelWithId) -> Bucket:
+        """Create a bucket in the database."""
+        with self.session_maker.begin() as session:
+            try:
+                new_bucket = GroceryBucket(**bucket.model_dump() | {"user_id": user.id})
+                session.add(new_bucket)
+                session.flush()  # unless we do this the exception is not caught !
+            except exc.IntegrityError as error:
+                session.rollback()
+                raise BackendException(
+                    f"There is already a bucket with the name : "
+                    f"{bucket.name} and for the user : {user.name}"
+                )
+        with self.session_maker.begin() as new_session:
+            db_entry = (
+                new_session.query(GroceryBucket)
+                .filter_by(user_id=user.id, name=bucket.name)
+                .first()
+            )
+            return Bucket.model_validate(
+                {
+                    "name": db_entry.name,
+                }
+            )
+
+    def get_all_buckets_for_user(self, user: UserModelWithId) -> list[Bucket]:
+        """Get all the buckets for the user."""
+        buckets = []
+        with self.session_maker.begin() as session:
+            for db_entry in (
+                session.query(GroceryBucket).filter_by(user_id=user.id).all()
+            ):
+                buckets.append(Bucket.model_validate({"name": db_entry.name}))
+        return buckets
 
 
 def instantiate_backend(sqlite_db_path: str):

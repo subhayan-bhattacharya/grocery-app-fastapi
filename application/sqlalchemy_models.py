@@ -6,7 +6,7 @@ import pathlib
 from dotenv import load_dotenv
 from sqlalchemy import Column, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.types import Boolean, DateTime, Integer
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -54,6 +54,9 @@ class GroceryBucket(Base):
     user_id = Column(Integer, ForeignKey("user.id"))
     name = Column(String(20), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="user_id_name_constraint"),
+    )
 
 
 class GroceryBucketAccess(Base):
