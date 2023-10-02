@@ -3,6 +3,7 @@ import sqlite3
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from werkzeug.security import generate_password_hash
 
 from application import app
 from application.backend import instantiate_backend
@@ -19,6 +20,7 @@ def execute_sql_and_get_results(
     cursor.close()
     conn.close()
     return results
+
 
 #
 # def test_get_not_purchased_entries(database):
@@ -283,3 +285,62 @@ def test_adding_a_user_twice_fails(database):
         response.json()["detail"]
         == "There is already a user with the name : user1 and email : user1@example.com"
     )
+
+
+def test_logging_a_user(database):
+    """Test that a user can be logged in."""
+    sql_statements = [
+        text(
+            "INSERT INTO user (email, name, lastName, password) "
+            "VALUES (:email, :name, :lastName, :password)"
+        ).params(
+            email="user1@example.com",
+            name="user1",
+            lastName="lastname1",
+            # Using the function generate_password_hash is important
+            # before sending the password because the route uses the function
+            # check_password_hash to compare the passwords
+            password=generate_password_hash("password"),
+        )
+    ]
+    add_and_execute_statements, database_file_path_str = database
+    add_and_execute_statements(sql_statements)
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post(
+        "/login", data={"username": "user1@example.com", "password": "password"}
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert "token_type" in response.json()
+    assert response.json()["token_type"] == "bearer"
+
+
+def test_logging_a_user_with_wrong_password_fails(database):
+    """Test logging a user in with wrong password fails."""
+    sql_statements = [
+        text(
+            "INSERT INTO user (email, name, lastName, password) "
+            "VALUES (:email, :name, :lastName, :password)"
+        ).params(
+            email="user1@example.com",
+            name="user1",
+            lastName="lastname1",
+            # Using the function generate_password_hash is important
+            # before sending the password because the route uses the function
+            # check_password_hash to compare the passwords
+            password=generate_password_hash("password"),
+        )
+    ]
+    add_and_execute_statements, database_file_path_str = database
+    add_and_execute_statements(sql_statements)
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    client = TestClient(app)
+    response = client.post(
+        "/login",
+        data={
+            "username": "user1@example.com",
+            "password": "password1",  # wrong password
+        },
+    )
+    assert response.status_code == 401
