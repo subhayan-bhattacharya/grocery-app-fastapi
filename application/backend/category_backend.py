@@ -7,7 +7,7 @@ from application.sqlalchemy_models import GroceryCategory
 from application.backend import BackendException, ResourceNotFound
 
 
-class BackendCategory:
+class CategoryBackend:
     """Backend category class."""
     def __init__(self, session_maker: sessionmaker):
         self.session_maker = session_maker

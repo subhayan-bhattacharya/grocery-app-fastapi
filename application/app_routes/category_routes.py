@@ -11,17 +11,17 @@ from application.models import CategoryWithId, Category
 
 
 @functools.cache
-def get_category_backend() -> category_backend.BackendCategory:
+def get_category_backend() -> category_backend.CategoryBackend:
     """Instantiate the category backend."""
     return instantiate_backend(
         sqlite_db_path=os.getenv("DB_FILE"),
-        backend_class=category_backend.BackendCategory,
+        backend_class=category_backend.CategoryBackend,
     )
 
 
 def create_a_new_category(
     category: Category,
-    backend: Annotated[category_backend.BackendCategory, Depends(get_category_backend)],
+    backend: Annotated[category_backend.CategoryBackend, Depends(get_category_backend)],
 ) -> CategoryWithId:
     """Create a new category."""
     try:
@@ -31,7 +31,7 @@ def create_a_new_category(
 
 
 def get_the_list_of_categories(
-    backend: Annotated[category_backend.BackendCategory, Depends(get_category_backend)],
+    backend: Annotated[category_backend.CategoryBackend, Depends(get_category_backend)],
 ) -> list[CategoryWithId]:
     """Get the list of all categories."""
     return backend.get_all_the_categories()
@@ -39,7 +39,7 @@ def get_the_list_of_categories(
 
 def get_a_single_category(
     category_id: int,
-    backend: Annotated[category_backend.BackendCategory, Depends(get_category_backend)],
+    backend: Annotated[category_backend.CategoryBackend, Depends(get_category_backend)],
 ) -> CategoryWithId:
     """Get the details of a single category."""
     try:
@@ -50,7 +50,7 @@ def get_a_single_category(
 
 def delete_a_category(
     category_id: int,
-    backend: Annotated[category_backend.BackendCategory, Depends(get_category_backend)],
+    backend: Annotated[category_backend.CategoryBackend, Depends(get_category_backend)],
 ):
     """Delete a single category."""
     try:
