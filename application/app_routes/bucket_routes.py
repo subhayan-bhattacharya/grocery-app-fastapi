@@ -23,3 +23,10 @@ def get_the_list_of_buckets_for_the_logged_in_user(
 ):
     """Gets the list of buckets that the user created."""
     return backend.BACKEND.get_all_buckets_for_user(user=current_user)
+
+
+def delete_a_bucket(
+    current_user: Annotated[UserModelWithId, Depends(get_current_user)]
+):
+    """Delete a bucket of the logged in user."""
+    pass

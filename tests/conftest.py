@@ -2,10 +2,12 @@
 import os
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from werkzeug.security import generate_password_hash
 
 import application.sqlalchemy_models as sqlalchemy_models
+from application.backend import instantiate_backend
 
 
 @pytest.fixture()
@@ -36,3 +38,26 @@ def database(request):
         session.commit()
 
     yield add_and_execute_sql_statements, database_file_path_str
+
+
+@pytest.fixture()
+def setup_database_and_add_user(database):
+    """Set up the database and add an initial user."""
+    sql_statements = [
+        text(
+            "INSERT INTO user (email, name, lastName, password) "
+            "VALUES (:email, :name, :lastName, :password)"
+        ).params(
+            email="user1@example.com",
+            name="user1",
+            lastName="lastname1",
+            # Using the function generate_password_hash is important
+            # before sending the password because the route uses the function
+            # check_password_hash to compare the passwords
+            password=generate_password_hash("password"),
+        )
+    ]
+    add_and_execute_statements, database_file_path_str = database
+    add_and_execute_statements(sql_statements)
+    instantiate_backend(sqlite_db_path=database_file_path_str)
+    yield database_file_path_str

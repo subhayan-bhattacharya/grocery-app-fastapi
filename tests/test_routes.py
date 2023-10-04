@@ -3,7 +3,6 @@ import sqlite3
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
-from werkzeug.security import generate_password_hash
 
 from application import app
 from application.backend import instantiate_backend
@@ -254,22 +253,8 @@ def test_adding_a_user_to_the_database(database):
     assert results[0][1] == "test_user@gmail.com"
 
 
-def test_adding_a_user_twice_fails(database):
+def test_adding_a_user_twice_fails(setup_database_and_add_user):
     """Test that the same user cannot be added twice."""
-    sql_statements = [
-        text(
-            "INSERT INTO user (email, name, lastName, password) "
-            "VALUES (:email, :name, :lastName, :password)"
-        ).params(
-            email="user1@example.com",
-            name="user1",
-            lastName="lastname1",
-            password="password",
-        )
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-    instantiate_backend(sqlite_db_path=database_file_path_str)
     client = TestClient(app)
     response = client.post(
         "/users",
@@ -287,25 +272,8 @@ def test_adding_a_user_twice_fails(database):
     )
 
 
-def test_logging_a_user(database):
+def test_logging_a_user(setup_database_and_add_user):
     """Test that a user can be logged in."""
-    sql_statements = [
-        text(
-            "INSERT INTO user (email, name, lastName, password) "
-            "VALUES (:email, :name, :lastName, :password)"
-        ).params(
-            email="user1@example.com",
-            name="user1",
-            lastName="lastname1",
-            # Using the function generate_password_hash is important
-            # before sending the password because the route uses the function
-            # check_password_hash to compare the passwords
-            password=generate_password_hash("password"),
-        )
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-    instantiate_backend(sqlite_db_path=database_file_path_str)
     client = TestClient(app)
     response = client.post(
         "/login", data={"username": "user1@example.com", "password": "password"}
@@ -316,25 +284,8 @@ def test_logging_a_user(database):
     assert response.json()["token_type"] == "bearer"
 
 
-def test_logging_a_user_with_wrong_password_fails(database):
+def test_logging_a_user_with_wrong_password_fails(setup_database_and_add_user):
     """Test logging a user in with wrong password fails."""
-    sql_statements = [
-        text(
-            "INSERT INTO user (email, name, lastName, password) "
-            "VALUES (:email, :name, :lastName, :password)"
-        ).params(
-            email="user1@example.com",
-            name="user1",
-            lastName="lastname1",
-            # Using the function generate_password_hash is important
-            # before sending the password because the route uses the function
-            # check_password_hash to compare the passwords
-            password=generate_password_hash("password"),
-        )
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-    instantiate_backend(sqlite_db_path=database_file_path_str)
     client = TestClient(app)
     response = client.post(
         "/login",
@@ -342,5 +293,41 @@ def test_logging_a_user_with_wrong_password_fails(database):
             "username": "user1@example.com",
             "password": "password1",  # wrong password
         },
+    )
+    assert response.status_code == 401
+
+
+def test_adding_a_bucket_for_a_user(setup_database_and_add_user):
+    """Test adding a bucket for the user."""
+    database_file_path_str = setup_database_and_add_user
+    client = TestClient(app)
+    response = client.post(
+        "/login", data={"username": "user1@example.com", "password": "password"}
+    )
+    access_token = response.json()["access_token"]
+    new_response = client.post(
+        "/buckets",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+        json={"name": "Groceries"},
+    )
+    assert new_response.status_code == 201
+    results = execute_sql_and_get_results(
+        database_file_path=database_file_path_str.split("/")[-1],
+        statement="select gb.* from grocery_bucket as gb join user as u "
+        "on gb.user_id = u.id where u.email = ? and gb.name = ?",
+        params=("user1@example.com", "Groceries"),
+    )
+    assert len(results) == 1
+    assert results[0][2] == "Groceries"
+
+
+def test_adding_a_bucket_for_user_fails_for_non_authenticated_user(setup_database_and_add_user):
+    """Adding a bucket should fail for a non authenticated user."""
+    client = TestClient(app)
+    response = client.post(
+        "/buckets",
+        json={"name": "Groceries"},
     )
     assert response.status_code == 401
