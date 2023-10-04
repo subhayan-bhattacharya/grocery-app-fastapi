@@ -24,7 +24,7 @@ from application.app_routes.supermarket_routes import (
 from application.app_routes.user_routes import create_a_new_user, login_a_user
 import application.backend.category_backend as category_backend
 from application.backend import instantiate_backend
-from application.models import Bucket, CategoryWithId, SuperMarket, Token, UserModel
+from application.models import Bucket, CategoryWithId, SuperMarketWithId, Token, UserModel
 
 
 @asynccontextmanager
@@ -68,8 +68,8 @@ delete_a_category = app.delete(path="/categories/{category_id}", status_code=204
 
 # supermarket routes
 create_a_supermarket_entry = app.post(
-    "/supermarkets", response_model=SuperMarket, status_code=201
+    "/supermarkets", response_model=SuperMarketWithId, status_code=201
 )(create_a_supermarket_entry)
 get_supermarket_entries = app.get(
-    path="/supermarkets", response_model=list[SuperMarket]
+    path="/supermarkets", response_model=list[SuperMarketWithId]
 )(get_supermarket_entries)

@@ -76,36 +76,6 @@ class Backend:
                 )
         return entries
 
-    def add_a_supermarket(self, supermarket: SuperMarket) -> SuperMarketWithId:
-        """Add a supermarket into the database."""
-        with self.session_maker.begin() as session:
-            try:
-                new_supermarket = GrocerySupermarket(**supermarket.model_dump())
-                session.add(new_supermarket)
-                session.flush()  # unless we do this the exception is not caught !
-            except exc.IntegrityError as error:
-                session.rollback()
-                raise BackendException(
-                    f"There is already a supermarket with the name : {supermarket.name}"
-                )
-        with self.session_maker.begin() as new_session:
-            db_entry = (
-                new_session.query(GrocerySupermarket)
-                .filter_by(name=supermarket.name)
-                .first()
-            )
-            return SuperMarketWithId.model_validate({"name": db_entry.name})
-
-    def get_the_list_of_supermarkets(self) -> list[SuperMarketWithId]:
-        """Get the list of supermarkets from database."""
-        supermarkets = []
-        with self.session_maker.begin() as session:
-            for db_entry in session.query(GrocerySupermarket).all():
-                supermarkets.append(
-                    SuperMarketWithId.model_validate({"name": db_entry.name})
-                )
-        return supermarkets
-
     def add_a_new_grocery_item(self, name: str, category_id: int) -> int:
         """Add a new grocery item to the database."""
         with self.session_maker.begin() as session:
