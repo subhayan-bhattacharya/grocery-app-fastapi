@@ -11,7 +11,7 @@ from application.models import Bucket, UserModelWithId
 def create_a_grocery_bucket(
     bucket: Bucket, current_user: Annotated[UserModelWithId, Depends(get_current_user)]
 ) -> Bucket:
-    """Creates a grocery bucket of the logged in user."""
+    """Creates a grocery bucket of the logged-in user."""
     try:
         return backend.BACKEND.create_a_grocery_bucket(bucket=bucket, user=current_user)
     except backend.BackendException as error:
