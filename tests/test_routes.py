@@ -323,7 +323,9 @@ def test_adding_a_bucket_for_a_user(setup_database_and_add_user):
     assert results[0][2] == "Groceries"
 
 
-def test_adding_a_bucket_for_user_fails_for_non_authenticated_user(setup_database_and_add_user):
+def test_adding_a_bucket_for_user_fails_for_non_authenticated_user(
+    setup_database_and_add_user,
+):
     """Adding a bucket should fail for a non authenticated user."""
     client = TestClient(app)
     response = client.post(

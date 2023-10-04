@@ -75,7 +75,7 @@ class GroceryItem(Base):
     __tablename__ = "grocery_item"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    item_name = Column(String(20), index=True, nullable=False, unique=True)
+    name = Column(String(20), index=True, nullable=False, unique=True)
     category_id = Column(Integer, ForeignKey("grocery_category.id"))
 
 
@@ -86,7 +86,7 @@ class GroceryCategory(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(20), index=True, nullable=False, unique=True)
-    description = Column(String(50))
+    description = Column(String(50), nullable=True)
 
 
 class GroceryEntries(Base):
@@ -99,6 +99,9 @@ class GroceryEntries(Base):
     # There will be an entry into the item table with the category when
     # this table gets populated
     item_id = Column(Integer, ForeignKey("grocery_item.id"))
+    # Same for this one . If there is a category already the id of that
+    # category would be used . Else there should be an entry into the
+    # category table.
     category_id = Column(Integer, ForeignKey("grocery_category.id"))
     quantity = Column(Integer, default=1, nullable=False)
     description = Column(String(50))

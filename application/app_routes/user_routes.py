@@ -5,9 +5,11 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
 import application.backend as backend
-from application.app_routes.security import (ACCESS_TOKEN_EXPIRE_MINUTES,
-                                             authenticate_user,
-                                             create_access_token)
+from application.app_routes.security import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    authenticate_user,
+    create_access_token,
+)
 from application.models import UserModel
 
 

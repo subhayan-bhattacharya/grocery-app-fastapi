@@ -7,14 +7,22 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from application.app_routes.bucket_routes import (
-    create_a_grocery_bucket, get_the_list_of_buckets_for_the_logged_in_user)
-from application.app_routes.category_routes import (create_a_new_category,
-                                                    get_the_list_of_categories)
+    create_a_grocery_bucket,
+    get_the_list_of_buckets_for_the_logged_in_user,
+)
+from application.app_routes.category_routes import (
+    create_a_new_category,
+    get_the_list_of_categories,
+    get_a_single_category,
+    delete_a_category
+)
 from application.app_routes.supermarket_routes import (
-    create_a_supermarket_entry, get_supermarket_entries)
+    create_a_supermarket_entry,
+    get_supermarket_entries,
+)
 from application.app_routes.user_routes import create_a_new_user, login_a_user
 from application.backend import instantiate_backend
-from application.models import Bucket, Category, SuperMarket, Token, UserModel
+from application.models import Bucket, CategoryWithId, SuperMarket, Token, UserModel
 
 
 @asynccontextmanager
@@ -45,12 +53,16 @@ create_a_grocery_bucket = app.post("/buckets", response_model=Bucket, status_cod
 )
 
 # category routes
-get_the_list_of_categories = app.get(path="/categories", response_model=list[Category])(
-    get_the_list_of_categories
-)
+get_the_list_of_categories = app.get(
+    path="/categories", response_model=list[CategoryWithId]
+)(get_the_list_of_categories)
 create_a_new_category = app.post(
-    path="/categories", response_model=Category, status_code=201
+    path="/categories", response_model=CategoryWithId, status_code=201
 )(create_a_new_category)
+get_a_single_category = app.get(
+    path="/categories/{category_id}", response_model=CategoryWithId
+)(get_a_single_category)
+delete_a_category = app.delete(path="/categories/{category_id}", status_code=204)(delete_a_category)
 
 # supermarket routes
 create_a_supermarket_entry = app.post(

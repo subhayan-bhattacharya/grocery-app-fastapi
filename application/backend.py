@@ -4,16 +4,35 @@ from typing import Union
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm.session import sessionmaker
 
-from application.models import (Bucket, Category, Entries, SuperMarket,
-                                UserModel, UserModelWithId)
-from application.sqlalchemy_models import (GroceryBucket, GroceryCategory,
-                                           GroceryEntries, GroceryItem,
-                                           GrocerySupermarket, User)
+from application.models import (
+    Bucket,
+    BucketWithId,
+    Category,
+    CategoryWithId,
+    Entries,
+    SuperMarket,
+    SuperMarketWithId,
+    UserModel,
+    UserModelWithId,
+    BucketItemEntry,
+)
+from application.sqlalchemy_models import (
+    GroceryBucket,
+    GroceryCategory,
+    GroceryEntries,
+    GroceryItem,
+    GrocerySupermarket,
+    User,
+)
 
 BACKEND: Union["Backend", None] = None
 
 
 class BackendException(Exception):
+    pass
+
+
+class ResourceNotFound(Exception):
     pass
 
 
@@ -57,7 +76,7 @@ class Backend:
                 )
         return entries
 
-    def add_a_supermarket(self, supermarket: SuperMarket) -> SuperMarket:
+    def add_a_supermarket(self, supermarket: SuperMarket) -> SuperMarketWithId:
         """Add a supermarket into the database."""
         with self.session_maker.begin() as session:
             try:
@@ -75,51 +94,88 @@ class Backend:
                 .filter_by(name=supermarket.name)
                 .first()
             )
-            return SuperMarket.model_validate({"name": db_entry.name})
+            return SuperMarketWithId.model_validate({"name": db_entry.name})
 
-    def get_the_list_of_supermarkets(self) -> list[SuperMarket]:
+    def get_the_list_of_supermarkets(self) -> list[SuperMarketWithId]:
         """Get the list of supermarkets from database."""
         supermarkets = []
         with self.session_maker.begin() as session:
             for db_entry in session.query(GrocerySupermarket).all():
-                supermarkets.append(SuperMarket.model_validate({"name": db_entry.name}))
+                supermarkets.append(
+                    SuperMarketWithId.model_validate({"name": db_entry.name})
+                )
         return supermarkets
 
-    def add_a_new_category(self, category: Category) -> Category:
+    def add_a_new_category(self, category: Category) -> CategoryWithId:
         """Add a new category."""
         with self.session_maker.begin() as session:
             try:
                 new_category = GroceryCategory(**category.model_dump())
                 session.add(new_category)
                 session.flush()  # unless we do this the exception is not caught !
+                return CategoryWithId.model_validate(
+                    {
+                        "id": new_category.id,
+                        "name": new_category.name,
+                        "description": new_category.description,
+                    }
+                )
             except exc.IntegrityError as error:
                 session.rollback()
                 raise BackendException(
                     f"There is already a category with the name : {category.name}"
                 )
 
-        with self.session_maker.begin() as new_session:
-            db_entry = (
-                new_session.query(GroceryCategory).filter_by(name=category.name).first()
-            )
-            return Category.model_validate(
-                {
-                    "name": db_entry.name,
-                    "description": db_entry.description,
-                }
-            )
-
-    def get_all_the_categories(self) -> list[Category]:
+    def get_all_the_categories(self) -> list[CategoryWithId]:
         """Get the list of categories."""
         categories = []
         with self.session_maker.begin() as session:
             for db_entry in session.query(GroceryCategory).all():
                 categories.append(
-                    Category.model_validate(
-                        {"name": db_entry.name, "description": db_entry.description}
+                    CategoryWithId.model_validate(
+                        {
+                            "id": db_entry.id,
+                            "name": db_entry.name,
+                            "description": db_entry.description
+                        }
                     )
                 )
         return categories
+
+    def get_a_single_category(self, category_id: int) -> CategoryWithId:
+        """Get a single category."""
+        with self.session_maker.begin() as session:
+            db_entry = session.query(GroceryCategory).filter_by(id=category_id).first()
+            if db_entry is None:
+                raise ResourceNotFound(f"No category found with the id {category_id}")
+            return CategoryWithId.model_validate(
+                {
+                    "id": db_entry.id,
+                    "name": db_entry.name,
+                    "description": db_entry.description,
+                }
+            )
+
+    def delete_a_single_category(self, category_id: int):
+        """Delete a single category."""
+        with self.session_maker.begin() as session:
+            deleted = session.query(GroceryCategory).filter_by(id=category_id).delete()
+            if deleted == 0:
+                raise ResourceNotFound(f"No category found with the id {category_id}")
+
+    def add_a_new_grocery_item(self, name: str, category_id: int) -> int:
+        """Add a new grocery item to the database."""
+        with self.session_maker.begin() as session:
+            try:
+                item = GroceryItem(name=name, category_id=category_id)
+                session.add(item)
+                session.flush()
+                return item.id
+            except exc.IntegrityError as error:
+                session.rollback()
+                raise BackendException(
+                    f"There is already a grocery item with the name {name}"
+                )
 
     def add_a_new_user(self, user: UserModel):
         """Add a new user to the database."""
@@ -171,7 +227,9 @@ class Backend:
             if not user_in_db.verify_password(password=password):
                 raise IncorrectCredentials("Wrong user name or password!.")
 
-    def create_a_grocery_bucket(self, bucket: Bucket, user: UserModelWithId) -> Bucket:
+    def create_a_grocery_bucket(
+        self, bucket: Bucket, user: UserModelWithId
+    ) -> BucketWithId:
         """Create a bucket in the database."""
         with self.session_maker.begin() as session:
             try:
@@ -190,21 +248,51 @@ class Backend:
                 .filter_by(user_id=user.id, name=bucket.name)
                 .first()
             )
-            return Bucket.model_validate(
+            return BucketWithId.model_validate(
                 {
                     "name": db_entry.name,
                 }
             )
 
-    def get_all_buckets_for_user(self, user: UserModelWithId) -> list[Bucket]:
+    def get_all_buckets_for_user(self, user: UserModelWithId) -> list[BucketWithId]:
         """Get all the buckets for the user."""
         buckets = []
         with self.session_maker.begin() as session:
             for db_entry in (
                 session.query(GroceryBucket).filter_by(user_id=user.id).all()
             ):
-                buckets.append(Bucket.model_validate({"name": db_entry.name}))
+                buckets.append(BucketWithId.model_validate({"name": db_entry.name}))
         return buckets
+
+    def delete_a_user_bucket(self, user: UserModelWithId, bucket_name: str):
+        """Delete a bucket for the user."""
+        pass
+
+    # def add_a_grocery_entry(self, bucket_id: int, entry: BucketItemEntry):
+    #     """Add an entry to grocery bucket."""
+    #     if entry.item_id is None:
+    #         # Since the item id is not supplied there is nothing existing in the
+    #         # database.
+    #         try:
+    #             if entry.category_id is None:
+    #                 category = self.add_a_new_category(
+    #                     Category.model_validate(
+    #                         {"name": entry.category_name}
+    #                     )
+    #                 )
+    #                 item = self.add_a_new_grocery_item(
+    #                     name=entry.name,
+    #                     category_id=category.
+    #                 )
+    #     if entry.category_id is None:
+    #         try:
+    #             category = self.add_a_new_category(
+    #                 Category.model_validate(
+    #                     {"name": entry.category_name}
+    #                 )
+    #             )
+    #         except BackendException as error:
+    #             raise error
 
 
 def instantiate_backend(sqlite_db_path: str):
