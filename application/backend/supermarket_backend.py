@@ -2,7 +2,7 @@
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy import exc
 
-from application.backend import BackendException
+from application.backend import BackendException, ResourceNotFound
 from application.models import SuperMarketWithId, SuperMarket
 from application.sqlalchemy_models import GrocerySupermarket
 
@@ -40,3 +40,31 @@ class SupermarketBackend:
                     )
                 )
         return supermarkets
+
+    def delete_a_supermarket(self, supermarket_id: int):
+        """Delete a supermarket by its id."""
+        with self.session_maker.begin() as session:
+            deleted = (
+                session.query(GrocerySupermarket).filter_by(id=supermarket_id).delete()
+            )
+            if deleted == 0:
+                raise ResourceNotFound(
+                    f"No Supermarket found with the id {supermarket_id}"
+                )
+
+    def get_a_single_supermarket(self, supermarket_id: int) -> SuperMarketWithId:
+        """Get the details about a single supermarket."""
+        with self.session_maker.begin() as session:
+            db_entry = (
+                session.query(GrocerySupermarket).filter_by(id=supermarket_id).first()
+            )
+            if db_entry is None:
+                raise ResourceNotFound(
+                    f"No supermarket found with the id {supermarket_id}"
+                )
+            return SuperMarketWithId.model_validate(
+                {
+                    "id": db_entry.id,
+                    "name": db_entry.name,
+                }
+            )

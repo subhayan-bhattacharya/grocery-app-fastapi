@@ -15,16 +15,24 @@ from application.app_routes.category_routes import (
     create_a_new_category,
     get_the_list_of_categories,
     get_a_single_category,
-    delete_a_category
+    delete_a_category,
 )
 from application.app_routes.supermarket_routes import (
     create_a_supermarket_entry,
     get_supermarket_entries,
+    delete_a_supermarket,
+    get_a_single_supermarket,
 )
 from application.app_routes.user_routes import create_a_new_user, login_a_user
 import application.backend.category_backend as category_backend
 from application.backend import instantiate_backend
-from application.models import Bucket, CategoryWithId, SuperMarketWithId, Token, UserModel
+from application.models import (
+    Bucket,
+    CategoryWithId,
+    SuperMarketWithId,
+    Token,
+    UserModel,
+)
 
 
 @asynccontextmanager
@@ -64,7 +72,9 @@ create_a_new_category = app.post(
 get_a_single_category = app.get(
     path="/categories/{category_id}", response_model=CategoryWithId
 )(get_a_single_category)
-delete_a_category = app.delete(path="/categories/{category_id}", status_code=204)(delete_a_category)
+delete_a_category = app.delete(path="/categories/{category_id}", status_code=204)(
+    delete_a_category
+)
 
 # supermarket routes
 create_a_supermarket_entry = app.post(
@@ -73,3 +83,9 @@ create_a_supermarket_entry = app.post(
 get_supermarket_entries = app.get(
     path="/supermarkets", response_model=list[SuperMarketWithId]
 )(get_supermarket_entries)
+delete_a_supermarket = app.delete(
+    path="/supermarkets/{supermarket_id}", status_code=204
+)(delete_a_supermarket)
+get_a_single_supermarket = app.get(
+    path="/supermarkets/{supermarket_id}", response_model=SuperMarketWithId
+)(get_a_single_supermarket)

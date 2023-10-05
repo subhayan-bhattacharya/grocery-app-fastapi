@@ -214,4 +214,3 @@ def instantiate_backend(sqlite_db_path: str, backend_class: type) -> Any:
     session_maker = sessionmaker(engine)
     print(f"Instantiating backend...{backend_class}!")
     return backend_class(session_maker=session_maker)
-

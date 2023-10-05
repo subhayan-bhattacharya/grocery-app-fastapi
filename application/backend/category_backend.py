@@ -9,6 +9,7 @@ from application.backend import BackendException, ResourceNotFound
 
 class CategoryBackend:
     """Backend category class."""
+
     def __init__(self, session_maker: sessionmaker):
         self.session_maker = session_maker
 
@@ -42,7 +43,7 @@ class CategoryBackend:
                         {
                             "id": db_entry.id,
                             "name": db_entry.name,
-                            "description": db_entry.description
+                            "description": db_entry.description,
                         }
                     )
                 )
