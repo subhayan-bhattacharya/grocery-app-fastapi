@@ -1,6 +1,4 @@
 """Main module for the fastapi app."""
-import functools
-import os
 import pathlib
 from contextlib import asynccontextmanager
 

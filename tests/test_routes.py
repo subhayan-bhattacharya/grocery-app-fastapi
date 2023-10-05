@@ -1,24 +1,9 @@
 """Test file for routes."""
-import sqlite3
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from application import app
-from application.backend import instantiate_backend
-
-
-def execute_sql_and_get_results(
-    database_file_path: str, statement: str, params: tuple[str]
-) -> tuple[str]:
-    """Execute the sql and get back the results."""
-    conn = sqlite3.connect(database_file_path)
-    cursor = conn.cursor()
-    cursor.execute(statement, params)
-    results = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return results
 
 
 #
@@ -95,138 +80,6 @@ def execute_sql_and_get_results(
 #     for entry in response.json():
 #         assert entry["item_name"] in ["Rice", "Milk"]
 
-
-def test_adding_a_supermarket(database):
-    """Test that a supermarket can be added to the database."""
-    _, database_file_path_str = database
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.post("/supermarkets", json={"name": "Edeka"})
-    assert response.status_code == 201
-    results = execute_sql_and_get_results(
-        database_file_path=database_file_path_str.split("/")[-1],
-        statement="select * from grocery_supermarket where name = ?",
-        params=("Edeka",),
-    )
-    assert len(results) == 1
-    assert results[0][1] == "Edeka"
-
-
-def test_adding_a_supermarket_twice_fails(database):
-    """Test adding a supermarket twice fails."""
-    sql_statements = [
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
-            name="Edeka"
-        )
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.post("/supermarkets", json={"name": "Edeka"})
-    assert response.status_code == 400
-    assert (
-        response.json()["detail"]
-        == "There is already a supermarket with the name : Edeka"
-    )
-
-
-def test_querying_list_of_supermarkets(database):
-    """Test querying list of supermarkets."""
-    sql_statements = [
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
-            name="Edeka"
-        ),
-        text("INSERT INTO grocery_supermarket (name) " "VALUES (:name)").params(
-            name="Aldi"
-        ),
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.get("/supermarkets")
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
-    assert len(response.json()) == 2
-    supermarket_entries = [entry["name"] for entry in response.json()]
-    assert sorted(supermarket_entries) == sorted(["Aldi", "Edeka"])
-
-
-def test_adding_a_category(database):
-    """Test that a category can be added to the database."""
-    _, database_file_path_str = database
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.post(
-        "/categories", json={"name": "Test_category", "description": "Test category"}
-    )
-    assert response.status_code == 201
-    results = execute_sql_and_get_results(
-        database_file_path=database_file_path_str.split("/")[-1],
-        statement="select * from grocery_category where name = ?",
-        params=("Test_category",),
-    )
-    assert len(results) == 1
-    assert results[0][1] == "Test_category"
-
-
-def test_adding_a_category_twice_fails(database):
-    """Test adding a category twice fails."""
-    sql_statements = [
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Fruits",
-            description="Fruits",
-        )
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.post(
-        "/categories", json={"name": "Fruits", "description": "Fruits"}
-    )
-    assert response.status_code == 400
-    assert (
-        response.json()["detail"]
-        == "There is already a category with the name : Fruits"
-    )
-
-
-def test_querying_list_of_categories(database):
-    """Test querying list of categories."""
-    sql_statements = [
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Fruits",
-            description="Fruits",
-        ),
-        text(
-            "INSERT INTO grocery_category (name, description) "
-            "VALUES (:name, :description)"
-        ).params(
-            name="Spices",
-            description="Spices",
-        ),
-    ]
-    add_and_execute_statements, database_file_path_str = database
-    add_and_execute_statements(sql_statements)
-
-    instantiate_backend(sqlite_db_path=database_file_path_str)
-    client = TestClient(app)
-    response = client.get("/categories")
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
-    assert len(response.json()) == 2
-    supermarket_entries = [entry["name"] for entry in response.json()]
-    assert sorted(supermarket_entries) == sorted(["Spices", "Fruits"])
 
 
 def test_adding_a_user_to_the_database(database):

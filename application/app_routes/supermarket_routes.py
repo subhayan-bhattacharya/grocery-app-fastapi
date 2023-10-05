@@ -7,7 +7,7 @@ from fastapi import HTTPException, Depends
 
 from application.backend import instantiate_backend, BackendException, ResourceNotFound
 from application.backend import supermarket_backend
-from application.models import SuperMarketWithId
+from application.models import SuperMarketWithId, SuperMarket
 
 
 @functools.cache
@@ -20,7 +20,7 @@ def get_supermarket_backend() -> supermarket_backend.SupermarketBackend:
 
 
 def create_a_supermarket_entry(
-    supermarket: SuperMarketWithId,
+    supermarket: SuperMarket,
     backend: Annotated[
         supermarket_backend.SupermarketBackend, Depends(get_supermarket_backend)
     ],
