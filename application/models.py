@@ -4,7 +4,7 @@ import os
 from typing import Optional
 
 import pydantic
-from pydantic import EmailStr, SecretStr, Field
+from pydantic import EmailStr, Field, SecretStr
 
 
 @functools.lru_cache()
@@ -92,7 +92,7 @@ class UserModel(pydantic.BaseModel):
 class UserModelWithId(UserModel):
     """Base model for user with user id."""
 
-    id: int
+    id: int = Field(exclude=True)
 
 
 class Entries(pydantic.BaseModel):

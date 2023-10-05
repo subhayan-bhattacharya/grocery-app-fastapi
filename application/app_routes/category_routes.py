@@ -3,11 +3,15 @@ import functools
 import os
 from typing import Annotated
 
-from fastapi import HTTPException, Depends
+from fastapi import Depends, HTTPException
 
-from application.backend import instantiate_backend, ResourceNotFound, BackendException
-from application.backend import category_backend
-from application.models import CategoryWithId, Category
+from application.backend import (
+    BackendException,
+    ResourceNotFound,
+    category_backend,
+    instantiate_backend,
+)
+from application.models import Category, CategoryWithId
 
 
 @functools.cache

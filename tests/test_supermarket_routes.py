@@ -13,7 +13,7 @@ def test_adding_a_supermarket(database, monkeypatch, execute_queries):
 
     # The below two lines are essential for the tests to work
     get_supermarket_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.post("/supermarkets", json={"name": "Edeka"})
     assert response.status_code == 201
@@ -38,7 +38,7 @@ def test_adding_a_supermarket_twice_fails(database, monkeypatch):
 
     # The below two lines are essential for the tests to work
     get_supermarket_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.post("/supermarkets", json={"name": "Edeka"})
     assert response.status_code == 400
@@ -63,7 +63,7 @@ def test_querying_list_of_supermarkets(database, monkeypatch):
 
     # The below two lines are essential for the tests to work
     get_supermarket_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.get("/supermarkets")
     assert response.status_code == 200

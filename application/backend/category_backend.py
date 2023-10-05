@@ -1,10 +1,10 @@
 """Module for backend functions which deals with categories."""
-from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy import exc
+from sqlalchemy.orm.session import sessionmaker
 
+from application.backend import BackendException, ResourceNotFound
 from application.models import Category, CategoryWithId
 from application.sqlalchemy_models import GroceryCategory
-from application.backend import BackendException, ResourceNotFound
 
 
 class CategoryBackend:

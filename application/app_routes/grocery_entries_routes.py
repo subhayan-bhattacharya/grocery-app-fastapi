@@ -1,6 +1,6 @@
 """Module for dealing with grocery entries."""
-from application.models import BucketItemEntry
 import application.backend as backend
+from application.models import BucketItemEntry
 
 
 def add_a_grocery_entry(bucket_id: int, entry: BucketItemEntry) -> BucketItemEntry:

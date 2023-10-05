@@ -5,27 +5,29 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from application.app_routes.bucket_routes import (
-    create_a_grocery_bucket,
-    get_the_list_of_buckets_for_the_logged_in_user,
-)
+import application.backend.category_backend as category_backend
 from application.app_routes.category_routes import (
     create_a_new_category,
-    get_the_list_of_categories,
-    get_a_single_category,
     delete_a_category,
+    get_a_single_category,
+    get_the_list_of_categories,
 )
 from application.app_routes.supermarket_routes import (
     create_a_supermarket_entry,
-    get_supermarket_entries,
     delete_a_supermarket,
     get_a_single_supermarket,
+    get_supermarket_entries,
 )
-from application.app_routes.user_routes import create_a_new_user, login_a_user
-import application.backend.category_backend as category_backend
+from application.app_routes.user_routes import (
+    create_a_grocery_bucket_for_the_user,
+    create_a_new_user,
+    get_the_list_of_buckets_for_the_logged_in_user,
+    login_a_user,
+)
 from application.backend import instantiate_backend
 from application.models import (
     Bucket,
+    BucketWithId,
     CategoryWithId,
     SuperMarketWithId,
     Token,
@@ -53,12 +55,11 @@ login_a_user = app.post(path="/login", response_model=Token)(login_a_user)
 
 # bucket routes
 get_the_list_of_buckets_for_the_logged_in_user = app.get(
-    "/buckets", response_model=list[Bucket], status_code=200
+    "/buckets", response_model=list[BucketWithId], status_code=200
 )(get_the_list_of_buckets_for_the_logged_in_user)
-create_a_grocery_bucket = app.post("/buckets", response_model=Bucket, status_code=201)(
-    create_a_grocery_bucket
-)
-
+create_a_grocery_bucket_for_the_user = app.post(
+    "/buckets", response_model=BucketWithId, status_code=201
+)(create_a_grocery_bucket_for_the_user)
 
 # category routes
 get_the_list_of_categories = app.get(

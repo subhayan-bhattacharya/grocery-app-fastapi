@@ -12,7 +12,7 @@ def test_adding_a_category(database, monkeypatch, execute_queries):
     execute_sql_and_get_results = execute_queries
     # The below two lines are essential for the tests to work
     get_category_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.post(
         "/categories", json={"name": "Test_category", "description": "Test category"}
@@ -42,7 +42,7 @@ def test_adding_a_category_twice_fails(database, monkeypatch):
     add_and_execute_statements(sql_statements)
     # The below two lines are essential for the tests to work
     get_category_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.post(
         "/categories", json={"name": "Fruits", "description": "Fruits"}
@@ -77,7 +77,7 @@ def test_querying_list_of_categories(database, monkeypatch):
 
     # The below two lines are essential for the tests to work
     get_category_backend.cache_clear()
-    monkeypatch.setenv('DB_FILE', database_file_path_str)
+    monkeypatch.setenv("DB_FILE", database_file_path_str)
     client = TestClient(app)
     response = client.get("/categories")
     assert response.status_code == 200

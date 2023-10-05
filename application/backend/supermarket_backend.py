@@ -1,9 +1,9 @@
 """Module for supermarket backend."""
-from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy import exc
+from sqlalchemy.orm.session import sessionmaker
 
 from application.backend import BackendException, ResourceNotFound
-from application.models import SuperMarketWithId, SuperMarket
+from application.models import SuperMarket, SuperMarketWithId
 from application.sqlalchemy_models import GrocerySupermarket
 
 

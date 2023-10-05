@@ -60,14 +60,13 @@ def setup_database_and_add_user(database):
     ]
     add_and_execute_statements, database_file_path_str = database
     add_and_execute_statements(sql_statements)
-    instantiate_backend(sqlite_db_path=database_file_path_str)
     yield database_file_path_str
 
 
 @pytest.fixture()
 def execute_queries():
     def execute_sql_and_get_results(
-            database_file_path: str, statement: str, params: tuple[str]
+        database_file_path: str, statement: str, params: tuple[str]
     ) -> tuple[str]:
         """Execute the sql and get back the results."""
         conn = sqlite3.connect(database_file_path)
@@ -77,4 +76,5 @@ def execute_queries():
         cursor.close()
         conn.close()
         return results
+
     return execute_sql_and_get_results
